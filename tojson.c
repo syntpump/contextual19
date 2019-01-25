@@ -4,7 +4,15 @@
 #include <ctype.h>
 
 
+// Size of the buffer
 #define BUFFERSIZE 50
+// Size of the char array where property name will be written
+#define MAXPROPSIZE 15
+// Size of the char array where property value will be written
+#define MAXVALSIZE 30
+// Size of the char array where position of selector will be written. 3 is
+// enough to contain two number and terminator
+#define MAXSELPOS 3
 
 
 // Read n characters and check whether it's \t (if n==1) or \t\t (if n==2)
@@ -20,8 +28,17 @@
 	)
 
 
-// Write JSON-style property: \t...\t"prop": "value"
+// Write JSON-style property: \t...\t"prop": value; without quotes
 #define printProperty(indent, name, value) \
+	fprintf( \
+		outpfile, \
+		"%s\"%s\": %s,\n", \
+		indent, \
+		name, \
+		value \
+	);
+// Write JSON-style property: \t...\t"prop": "value"; with quotes
+#define printPropertyQuotes(indent, name, value) \
 	fprintf( \
 		outpfile, \
 		"%s\"%s\": \"%s\",\n", \
@@ -56,7 +73,7 @@ void clear(char *buffer){
 }
 
 
-short readUntil (char what, FILE *fp, char *buffer){
+short readUntil (char what, FILE *fp, char *buffer) {
 	/* Read file until specific symbol, put the string into buffer and return
 	*  its length.*/
 	char c;
@@ -73,7 +90,14 @@ short readUntil (char what, FILE *fp, char *buffer){
 	return len;
 }
 
-void getSelector (char *buffer, char *position){
+void pasteAfter (char *string, const char *substring, int a, int b, int n) {
+	/* Paste n characters from substring[a:] into string[b:] */
+	do
+		string[a++] = substring[b++];
+	while (n-- > 0);
+}
+
+void getSelector (char *buffer, char *position) {
 	/* Parse selectors to position and name. Example:
 	*  "first next": buffer -> "next", position -> "1"
 	*  "second previous": buffer -> "previous", position -> "2"
@@ -82,7 +106,7 @@ void getSelector (char *buffer, char *position){
 	* 
 	*  Args:
 	*      buffer: String to read.
-	*      position: Int to write position of selector.
+	*      position: Char array to write position of selector.
 	*
 	*/
 	// Position of 'next', 'previous', 'token', etc.
@@ -155,8 +179,59 @@ void getSelector (char *buffer, char *position){
 	}
 }
 
+void getProperty (char *buffer, char *name, char *value) {
+	/* Parse property to name and value. Example:
+	*  "name is value": value -> '[true, "value"]', name -> 'name'
+	*  "name is not value": value -> '[false, "value"]', name -> 'name'
+	*  "name becomes value": value -> 'value', name -> 'name'
+	*
+	*  Args:
+	*	buffer: String to read.
+	*   name: Char array to write property name in.
+	*
+	*/
+	// Position counter.
+	short c = -1;
+	// I've avoid using strncpy here in order to clarify the code.
+	while (buffer[c++ + 1] != ' ')
+		name[c] = buffer[c];
+	name[c] = '\0';
+	if (buffer[c+1] == 'b') {
+		// Next word is 'becomes'.
+		c += 8;
+		// Write value and terminate it.
+		short i = -1;
+		do
+			value[i++] = buffer[c++];
+		while
+			(buffer[c] != ' ');
+		buffer[i] = '\0';
+	} else {
+		// Next is 'is' or 'is not'. It should be written in the following
+		// format:
+		// [true, value]	if "name is value"
+		// [false, value]	if "name is not value"
+		unsigned char isTrue;
+		if (buffer[c+6] == 't' && buffer[c+7] == ' '){
+			// After 'is no-t -'
+			c += 8;
+			isTrue = 0;
+		} else {
+			c += 4;
+			isTrue = 1;
+		}
+		strcpy(value, isTrue ? "[true, \"" : "[false, \"");
+		short i = isTrue ? 8 : 9;
+		do
+			value[i++] = buffer[c++];
+		while
+			(buffer[c] != ' ');
+		pasteAfter(value, "\"]\0", i, 0, 4);
+	}
+}
 
-int main (int argc, char** argv){
+
+int main (int argc, char** argv) {
 
 	FILE *inpfile, *outpfile;
 
@@ -180,9 +255,8 @@ int main (int argc, char** argv){
 			if (!strcmp(argv[i], "--file"))
 				inpfile = fopen(argv[i+1], "r");
 
-			if (!strcmp(argv[i], "--output")){
+			if (!strcmp(argv[i], "--output"))
 				outpfile = fopen(argv[i+1], "w");
-			}
 		}
 	} else {
 		fprintf(stderr, "No --file and --output specified.\n");
@@ -198,7 +272,6 @@ int main (int argc, char** argv){
 	fprintf(outpfile, "[\n");
 
 	while (1) {
-
 		fprintf(outpfile, "\t{\n");
 
 		char buffer[BUFFERSIZE] = {' '};
@@ -213,7 +286,7 @@ int main (int argc, char** argv){
 
 				clear(buffer);
 				// Enough to contain two numbers and '\0'
-				char selectorPosition[3];
+				char selectorPosition[MAXSELPOS];
 				// Name of selector will be written into buffer.
 				readUntil('\n', inpfile, buffer);
 				getSelector(
@@ -228,7 +301,14 @@ int main (int argc, char** argv){
 				while(catchTabs(2)){
 					clear(buffer);
 					readUntil('\n', inpfile, buffer);
-					printProperty("\t\t\t\t", "prop", "value");
+					char propertyName[MAXPROPSIZE];
+					char propertyValue[MAXVALSIZE];
+					getProperty(
+						buffer,
+						propertyName,
+						propertyValue
+					);
+					printProperty("\t\t\t\t", propertyName, propertyValue);
 					clear(buffer);
 				}
 				fseek(inpfile, -2, SEEK_CUR);
@@ -252,7 +332,14 @@ int main (int argc, char** argv){
 				while(catchTabs(1)){
 					clear(buffer);
 					readUntil('\n', inpfile, buffer);
-					printProperty("\t\t\t", "propthen", "value")
+					char propertyName[MAXPROPSIZE];
+					char propertyValue[MAXVALSIZE];
+					getProperty(
+						buffer,
+						propertyName,
+						propertyValue
+					);
+					printPropertyQuotes("\t\t\t", propertyName, buffer);
 					clear(buffer);
 				}
 
