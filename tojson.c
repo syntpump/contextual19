@@ -37,6 +37,8 @@
 		name, \
 		value \
 	);
+
+
 // Write JSON-style property: \t...\t"prop": "value"; with quotes
 #define printPropertyQuotes(indent, name, value) \
 	fprintf( \
@@ -56,6 +58,7 @@
 		indent, \
 		name \
 	);
+
 
 // Close dict block with "}"
 #define closeDict(indent) \
@@ -78,10 +81,9 @@ short readUntil (char what, FILE *fp, char *buffer) {
 	*  its length.*/
 	char c;
 	short len = 0;
-	while ((c = fgetc(fp)) != EOF && c != what) {
-		buffer[len] = c;
-		len++;
-	}
+	while ((c = fgetc(fp)) != EOF && c != what)
+		buffer[len++] = c;
+
 	if (feof(fp)) {
 		fprintf(stderr, "Unexpected end of the file.\n");
 		exit(EXIT_FAILURE);
@@ -114,9 +116,9 @@ void getSelector (char *buffer, char *position) {
 	if (isdigit(buffer[0])) {
 		// String starts with [0-9]+th
 		// Copy all until 't'
-		while (buffer[c++ + 1] != 't'){
+		while (buffer[c++ + 1] != 't')
 			position[c] = buffer[c];
-		}
+
 		position[c] = '\0';
 		// Selector name will start after 3 symbols: 'th '
 		c += 2;
@@ -212,14 +214,15 @@ void getProperty (char *buffer, char *name, char *value) {
 		// [true, value]	if "name is value"
 		// [false, value]	if "name is not value"
 		unsigned char isTrue;
+
 		if (buffer[c+6] == 't' && buffer[c+7] == ' '){
 			// After 'is no-t -'
-			c += 8;
-			isTrue = 0;
-		} else {
-			c += 4;
-			isTrue = 1;
-		}
+			// isTrue becomes false
+			isTrue = !(c += 8);
+		else
+			// isTrue becomes true
+			isTrue = !!(c += 4);
+
 		strcpy(value, isTrue ? "[true, \"" : "[false, \"");
 		short i = isTrue ? 8 : 9;
 		do
