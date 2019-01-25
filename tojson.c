@@ -367,10 +367,11 @@ int main (int argc, char** argv) {
 			// End of rule block
 			closeDict("\t");
 		}
-		deleteComma();
 
-		if(feof(inpfile))
+		if(feof(inpfile)){
+			deleteComma();
 			break;
+		}
 
 	}
 
