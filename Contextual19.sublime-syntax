@@ -1,0 +1,40 @@
+%YAML 1.2
+---
+file_extensions:
+  - ctx19
+scope: source.ctx19
+contexts:
+  main:
+    # Comments begin with a '#' and finish at the end of the line
+    - match: '#'
+      scope: punctuation.definition.comment
+      push: line_comment
+
+    # Properties
+    - match: '\b(pos|case|voice|gender|degree|person|tense|animate|number|type|form|aspect)\b'
+      scope: entity.name
+
+    # Conditional
+    - match: '\b(if|then)\b'
+      scope: keyword.control
+
+    # Controls
+    - match: '\b(is|not|becomes)\b'
+      scope: keyword.operator
+
+    # Selector name
+    - match: '\b(previous|next|token|beginning|end)\b'
+      scope: storage.type
+
+    # Selector position
+    - match: '\b(first|second|third|fourth|fifth|\d+th)\b'
+      scope: storage.modifier
+
+    # Numbers
+    - match: '\b(-)?[0-9.]+\b'
+      scope: constant.numeric
+
+  line_comment:
+    - meta_scope: comment.line
+    - match: $
+      pop: true
