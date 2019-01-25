@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 
 #define BUFFERSIZE 50
@@ -10,6 +11,13 @@
 #define catchTabs(n) \
 	fgets(buffer, n+1, inpfile) && \
 	!strcmp(buffer, n == 1 ? "\t" : "\t\t")
+
+#define catchBlock(name) \
+	!strcmp( \
+		buffer, \
+		name \
+		"\n" \
+	)
 
 
 // Write JSON-style property: \t...\t"prop": "value"
@@ -42,26 +50,109 @@
 
 
 void clear(char *buffer){
+	/* Fills buffer with spaces. */
 	for (int i = 0; i < BUFFERSIZE; i++)
 		buffer[i] = ' ';
 }
 
 
 short readUntil (char what, FILE *fp, char *buffer){
-	/*Read file until specific symbol, put the string into buffer and return
-	* its length.*/
+	/* Read file until specific symbol, put the string into buffer and return
+	*  its length.*/
 	char c;
 	short len = 0;
 	while ((c = fgetc(fp)) != EOF && c != what) {
 		buffer[len] = c;
 		len++;
 	}
-	if (feof(fp)){
+	if (feof(fp)) {
 		fprintf(stderr, "Unexpected end of the file.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	return len;
+}
+
+void getSelector (char *buffer, char *position){
+	/* Parse selectors to position and name. Example:
+	*  "first next": buffer -> "next", position -> "1"
+	*  "second previous": buffer -> "previous", position -> "2"
+	*  "6th next": buffer -> "next", position -> "6"
+	*  Write selector name to buffer, position to *position.
+	* 
+	*  Args:
+	*      buffer: String to read.
+	*      position: Int to write position of selector.
+	*
+	*/
+	// Position of 'next', 'previous', 'token', etc.
+	short c = -1;
+	if (isdigit(buffer[0])) {
+		// String starts with [0-9]+th
+		// Copy all until 't'
+		while (buffer[c++ + 1] != 't'){
+			position[c] = buffer[c];
+		}
+		position[c] = '\0';
+		// Selector name will start after 3 symbols: 'th '
+		c += 2;
+	} else {
+		// String starts with one of words: first, second, third, fourth,
+		// fifth, end, beginning, token.
+		// Third character in each of words is different, so we can recognize
+		// them using that.
+		switch(buffer[2]){
+			case 'r':
+				// 'fi -r- st'
+				strcpy(position, "1\0");
+				c = 5;
+				break;
+			case 'c':
+				// 'se -c- ond'
+				strcpy(position, "2\0");
+				c = 6;
+				break;
+			case 'i':
+				// 'th -i- rd'
+				strcpy(position, "3\0");
+				c = 5;
+				break;
+			case 'u':
+				// 'fo -u- rth'
+				strcpy(position, "4\0");
+				c = 6;
+				break;
+			case 'f':
+				// 'fi -f- th'
+				strcpy(position, "5\0");
+				c = 5;
+				break;
+			default:
+				// If there's no number-word, it's considered to be 'first'
+				strcpy(position, "1\0");
+				break;
+		}
+	}
+	if (c != 0) {
+		// Rewrite selector into buffer end terminate the word.
+		short i = -1;
+		do
+			buffer[i++] = buffer[c++];
+		while
+			(buffer[c] != ' ');
+		buffer[i] = '\0';
+	} else {
+		// String starts from 'end', 'beginning', or 'token' word. Put
+		// terminator after them.
+		switch(buffer[0]){
+			case 'e':
+				buffer[3] = '\t';
+			case 'b':
+				buffer[9] = '\t';
+			case 't':
+				buffer[5] = '\t';
+		}
+	}
 }
 
 
@@ -111,25 +202,33 @@ int main (int argc, char** argv){
 		fprintf(outpfile, "\t{\n");
 
 		char buffer[BUFFERSIZE] = {' '};
-		short len; // Size of read symbols.
 
 		// Catch 'if' block.
 		fgets(buffer, 4, inpfile);
-		if (!strcmp(buffer, "if\n")) {
+		if (catchBlock("if")) {
 			printDict("\t\t", "if");
 
 			// Catch selector.
 			while(catchTabs(1)){
+
 				clear(buffer);
-				len = readUntil('\n', inpfile, buffer);
-				printDict("\t\t\t", "selector");
+				// Enough to contain two numbers and '\0'
+				char selectorPosition[3];
+				// Name of selector will be written into buffer.
+				readUntil('\n', inpfile, buffer);
+				getSelector(
+					buffer,
+					selectorPosition
+				);
+				printDict("\t\t\t", buffer);
+				printProperty("\t\t\t\t", "position", selectorPosition);
 				clear(buffer);
 
-				// Caught property
+				// Catch property
 				while(catchTabs(2)){
 					clear(buffer);
-					len = readUntil('\n', inpfile, buffer);
-					printProperty("\t\t\t\t", "prop", "value")
+					readUntil('\n', inpfile, buffer);
+					printProperty("\t\t\t\t", "prop", "value");
 					clear(buffer);
 				}
 				fseek(inpfile, -2, SEEK_CUR);
@@ -145,14 +244,14 @@ int main (int argc, char** argv){
 
 			// Catch 'then' block
 			fgets(buffer, 12, inpfile);
-			if (!strcmp(buffer, "then\n")){
-				clear(buffer);
+			if (catchBlock("then")){
 				printDict("\t\t", "then");
+				clear(buffer);
 
 				// Caught property
 				while(catchTabs(1)){
 					clear(buffer);
-					len = readUntil('\n', inpfile, buffer);
+					readUntil('\n', inpfile, buffer);
 					printProperty("\t\t\t", "propthen", "value")
 					clear(buffer);
 				}
@@ -164,7 +263,6 @@ int main (int argc, char** argv){
 
 			// End of rule block
 			closeDict("\t");
-			//fprintf(outpfile, "\n");
 		}
 
 		if(feof(inpfile))
