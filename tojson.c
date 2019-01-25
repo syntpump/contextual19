@@ -69,6 +69,12 @@
 	);
 
 
+// Delete last comma and make line break
+#define deleteComma() \
+	fseeko(outpfile, -3, SEEK_CUR); \
+	fprintf(outpfile, "\n");
+
+
 void clear(char *buffer){
 	/* Fills buffer with spaces. */
 	for (int i = 0; i < BUFFERSIZE; i++)
@@ -215,7 +221,7 @@ void getProperty (char *buffer, char *name, char *value) {
 		// [false, value]	if "name is not value"
 		unsigned char isTrue;
 
-		if (buffer[c+6] == 't' && buffer[c+7] == ' '){
+		if (buffer[c+6] == 't' && buffer[c+7] == ' ')
 			// After 'is no-t -'
 			// isTrue becomes false
 			isTrue = !(c += 8);
@@ -298,6 +304,7 @@ int main (int argc, char** argv) {
 				);
 				printDict("\t\t\t", buffer);
 				printProperty("\t\t\t\t", "position", selectorPosition);
+				fseeko(outpfile, -1, SEEK_CUR);
 				clear(buffer);
 
 				// Catch property
@@ -314,12 +321,15 @@ int main (int argc, char** argv) {
 					printProperty("\t\t\t\t", propertyName, propertyValue);
 					clear(buffer);
 				}
+				deleteComma();
 				fseek(inpfile, -2, SEEK_CUR);
 
 				// End of selector
 				closeDict("\t\t\t");
 
 			}
+			deleteComma();
+
 			// End of 'if' block.
 			closeDict("\t\t");
 			fseek(inpfile, -1, SEEK_CUR);
@@ -328,6 +338,7 @@ int main (int argc, char** argv) {
 			// Catch 'then' block
 			fgets(buffer, 12, inpfile);
 			if (catchBlock("then")){
+
 				printDict("\t\t", "then");
 				clear(buffer);
 
@@ -344,16 +355,19 @@ int main (int argc, char** argv) {
 					);
 					printPropertyQuotes("\t\t\t", propertyName, buffer);
 					clear(buffer);
+
 				}
+				deleteComma();
 
 				// End of 'then' block.
 				closeDict("\t\t");
 			}
-
+			deleteComma();
 
 			// End of rule block
 			closeDict("\t");
 		}
+		deleteComma();
 
 		if(feof(inpfile))
 			break;
