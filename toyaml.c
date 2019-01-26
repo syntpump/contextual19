@@ -28,7 +28,7 @@
 	)
 
 
-// Write JSON-style property: \t...\t"prop": value; without quotes
+// Write YAML-style property: \t...\t"prop": value; without quotes
 #define printProperty(indent, name, value) \
 	fprintf( \
 		outpfile, \
@@ -39,13 +39,22 @@
 	);
 
 
-// Write dict JSON-style property: \t...\t"prop": {
+// Write dict YAML-style property: \t...\t"prop": {
 #define printDict(indent, name) \
 	fprintf( \
 		outpfile, \
 		"%s%s:\n", \
 		indent, \
 		name \
+	);
+
+
+// Write array item '-' with indent
+#define arrayItem(indent) \
+	fprintf( \
+		outpfile, \
+		"%s-\n", \
+		indent \
 	);
 
 
@@ -220,7 +229,7 @@ int main (int argc, char** argv) {
 
 	if (argc == 1) {
 		printf(
-"This parser can convert .ctx19 files to .json, but some parameters are "
+"This parser can convert .ctx19 files to .yaml, but some parameters are "
 "needed.\n\n"
 "Expected parameters:\n"
 "Name            Default     Description\n"
@@ -257,10 +266,12 @@ int main (int argc, char** argv) {
 
 		char buffer[BUFFERSIZE] = {' '};
 
+		arrayItem("");
+
 		// Catch 'if' block.
 		fgets(buffer, 4, inpfile);
 		if (catchBlock("if")) {
-			printDict("- ", "if");
+			printDict("  ", "if");
 
 			// Catch selector.
 			while(catchTabs(1)){
@@ -306,7 +317,7 @@ int main (int argc, char** argv) {
 			fgets(buffer, 12, inpfile);
 			if (catchBlock("then")){
 
-				printDict("    ", "then");
+				printDict("  ", "then");
 				clear(buffer);
 
 				// Caught property
