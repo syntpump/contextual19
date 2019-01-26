@@ -27,7 +27,7 @@ You don't need to use brackets or quotes, but no field can contain spaces. As co
 gender is fem
 voice is not active
 ```
-Using selectors you can get oncoming and preceding context (`next` and `previous` selectors) or reach 'second next/previous' or even 'n-th next/previous' tokens using this technique:
+Using selectors you can get oncoming and preceding context (`next` and `previous` selectors) or reach _second next/previous_ or even _n-th next/previous_ tokens using this technique:
 ```
 if
   first next
@@ -49,8 +49,8 @@ if
 then
   # Rules to be applied
 ```
-In order to reach the very beginning and the end of the sentence, you can use `end` and `beginning` selectors.
-In `then` parts you should specify new tagging properties for selected token. Use `becomes` as assigning operator:
+In order to reach the very beginning or the end of the sentence, you can use `end` and `beginning` selectors.
+In `then` part you should specify new tagging properties for selected token. Use `becomes` as assigning operator:
 ```
 if
   ...
@@ -60,7 +60,7 @@ then
 ```
 
 ## Regexing the syntax
-Your code can be recognized using following regex:
+Your code can be recognized with the following regex:
 ```regex
 (?(DEFINE)
 	(?<absolute_token> (token|beginning|end) )
@@ -88,7 +88,7 @@ Your code can be recognized using following regex:
 	(?<if_block> ( (?&if) \n (?&selectors_block) ) )
 	(?<then_block> ( (?&then) \n (?&assignings_block) ) )
 	(?<rule> (?&if_block) (?&then_block) )
-	(?<rules_block> ( (?&rule) \n? )+ )
+	(?<rules_block> ( (?&rule) \n? )* )
 )
 ^(?&rules_block)$
 ```
@@ -120,8 +120,15 @@ This standard can be easily parsed to JSON format. Here's the example with comme
 5. Statement `name is value` should be encoded like `[true, "value"]` and `name is not value` becomes `[false, "value"]`.
 
 ### Parse automatically
-You can also use a little C program in the root of this repo ([link](https://github.com/syntpump/contextual19/blob/master/tojson.c) | [raw](https://raw.githubusercontent.com/syntpump/contextual19/master/tojson.c)). Just compile it with GCC compiler and run with the following parameters.
+You can also use a `tojson.c` program in the root of this repo ( [link](https://github.com/syntpump/contextual19/blob/master/tojson.c) | [raw](https://raw.githubusercontent.com/syntpump/contextual19/master/tojson.c) ). Just compile it with GCC compiler and run with the following parameters:
 ```
 tojson --file rules.ctx19 --output rules.json
 ```
 Here `file` is a path to your `.ctx19` file and `output` is the path to file to parse in. If it's not exist, it'll be created.
+
+## Convert to YAML
+Contextual19 can be converted to YAML as well. It'll have the same structure as the JSON document. To perform it automatically, compile `toyaml.c` ( [link](https://github.com/syntpump/contextual19/blob/master/toyaml.c) | [raw](https://raw.githubusercontent.com/syntpump/contextual19/master/toyaml.c) ) with GCC compiler and run with the following parameters:
+```
+toyaml --fiel rules.ctx19 --output rules.yml
+```
+Here parameters is the same as in paragraph above.
