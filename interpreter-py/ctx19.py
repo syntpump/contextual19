@@ -1,4 +1,10 @@
 class Contextual19Parser:
+    pass
+
+
+class Contextual19FileParser(Contextual19Parser):
+    """This class will parse data from file to use.
+    """
 
     def __init__(self, filepath: str):
         """Init the class and read the file.
@@ -134,7 +140,7 @@ class Contextual19Parser:
                 while True:
                     name, value = catchAssignment(lines)
                     assignings[name] = value
-            except TypeError:
+            except (TypeError, IndexError):
                 return assignings
 
         def collectSelectors(lines):
@@ -165,9 +171,6 @@ class Contextual19Parser:
                     moveTo(lines, "then")
                     rule["then"] = collectAssignings(lines)
                     rules.append(rule)
-                    print(lines)
-                    print(self.cursor)
-                    print(lines[self.cursor])
             except (TypeError, IndexError):
                 return rules
 
