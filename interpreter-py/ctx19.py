@@ -1,5 +1,17 @@
 class Contextual19Parser:
-    pass
+    """This is Contextual19 parser. It takes the rules in object representation
+    and can process your data using them.
+    """
+
+    def _init__(self, data: dict):
+        """Init the class and remember the rules.
+
+        Args:
+            data (dict): Rules in object representation.
+
+        """
+
+        self.data = data
 
 
 class Contextual19FileParser(Contextual19Parser):
@@ -13,7 +25,7 @@ class Contextual19FileParser(Contextual19Parser):
             filepath (str): Path to .ctx19 file to read.
 
         Raises:
-            FileNotFoundError: The file is not exists.
+            FileNotFoundError: The file does not exist.
             PermissionError: You're not allowed to access to this file. This
                 error also can occur when the path you specified is directory,
                 not a file.
@@ -176,9 +188,6 @@ class Contextual19FileParser(Contextual19Parser):
 
         # Remember reading cursor
         self.cursor = 0
-
-        # Remember parsed data
-        self.data = list()
 
         lines = [line.rstrip('\n') for line in self.file]
         self.cursor = 0
