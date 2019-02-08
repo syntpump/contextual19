@@ -13,6 +13,192 @@ class Contextual19Parser:
 
         self.data = data
 
+    def applyRule(self, rule: dict, token: dict) -> dict:
+        """Apply assignments from "then" block of rule to the token.
+
+        Args:
+            rule (dict): Rule dict from self.data which contains 'if' and
+                'then' properties.
+            token (dict): Token dictionary which properties will be changed.
+                Example:
+                token = {
+                    "a": 0, "b": 1
+                }
+                Under this rules:
+                    a becomes 1
+                    b becomes 2
+                `token` becomes: {
+                    "a": 1,
+                    "b": 2
+                }
+
+        Returns:
+            dict: Resulting token.
+
+        """
+
+        for key in rule["then"]:
+            if key in token:
+                token[key] = rule["then"][key]
+
+        return token
+
+    def ruleIsAppliable(self, rule: dict, sentence: list, token: int) -> bool:
+        """Check if rule as appliable to some token in the sentence.
+
+        Args:
+            rule (dict): Rule dict from self.data which contains 'if' and
+                'then' properties.
+            sentence (list of dict): List of dicts of tokens.
+                Tokens should look like:
+                {"voice": ..., "tense": ..., other properties...}
+            token (int): Number of token (starting from 0) which propriety will
+                be checked.
+
+        Returns:
+            bool: True, if rule is appliable to this token, False otherwise.
+
+        """
+
+        def getRelativePosition(selector):
+            """Returns number of relative position (less than 0 for left
+            context and bigger than 0 otherwise) for the given selector.
+            Do not process absolute positions as 'end' and 'beginning'.
+            Example:
+                second next -> 2
+                4th previous -> -4
+                token -> 0
+                end, beginning -> 0
+            """
+
+            if selector["name"] in ["end", "beginning", "token"]:
+                return 0
+
+            if selector["name"] == "previous":
+                return -selector["position"]
+            else:
+                return selector["position"]
+
+        def getAbsolutePosition(selector, token: int, sentence):
+            """Returns number of absolute position of token to which the given
+            selector links.
+            Example:
+                Suppose len(sentence) = 10
+                selector = end, token = 5 -> 10
+                selector = beginning, token = 6 -> 0
+                selector = second next, token = 2 -> 4
+            """
+
+            if selector["name"] == "beginning":
+                return 0
+            elif selector["name"] == "end":
+                return len(sentence) - 1
+            else:
+                position = token + getRelativePosition(selector)
+                # Return None if position is out of sentence range.
+                if position < 0 or position >= len(sentence):
+                    return None
+                else:
+                    return position
+
+        def checkComparisons(position, selector, sentence):
+            """Check if some token (given as 'position') meets the selector
+            requirements.
+            """
+
+            for key in selector:
+                # Skip the service properties
+                if key in ["name", "position"]:
+                    continue
+                # If at least one key of token is not present the the whole
+                # rule is not appliable
+                if key not in sentence[position]:
+                    return False
+                # Check other ones
+                isPositive = selector[key][0]
+                if(
+                    (
+                        sentence[position][key] == selector[key][1] and
+                        not isPositive
+                    ) or (
+                        sentence[position][key] != selector[key][1] and
+                        isPositive
+                    )
+                ):
+                    return False
+
+            return True
+
+        for selector in rule["if"]:
+            position = getAbsolutePosition(selector, token, sentence)
+            # If at least one of selectors is out of range then the whole rule
+            # is not appliable.
+            if position is None:
+                return False
+            else:
+                if not checkComparisons(position, selector, sentence):
+                    return False
+
+        # If there was no fails before, this code will execute
+        return True
+
+    def applyIfPossible(self, rule: dict, sentence: list, token: int) -> list:
+        """Check if rule is appliable to the specific token and apply it then.
+
+        Args:
+            rule (dict): Rule dict from self.data.
+            sentence (list of dict): List of dicts of tokens.
+                Tokens should look like:
+                {"voice": ..., "tense": ..., other properties...}
+            token (int): Number of token to check.
+
+        Return:
+            list of dict: Resulting sentence
+
+        """
+
+        if self.ruleIsAppliable(rule, sentence, token):
+            sentence[token] = self.applyRule(rule, sentence[token])
+
+        return sentence
+
+    def applyRulesTo(self, rules: list, sentence: list, token: int) -> list:
+        """Check each rule if it is appliable to the given token and apply it
+        then.
+
+        Args:
+            rules (list of dicts): Rules from self.data with standard 'if' and
+                'then' properties.
+            sentence (list of dict): List of dicts of tokens.
+                Tokens should look like:
+                {"voice": ..., "tense": ..., other properties...}
+            token (int): Number of token to apply.
+
+        Returns:
+            list of dict: Resulting sentence
+
+        """
+
+        for rule in rules:
+            sentence = self.applyIfPossible(rule, sentence, token)
+
+        return sentence
+
+    def apply(self, sentence: list) -> list:
+        """Apply rules to tokens of the sentence.
+
+        Args:
+            sentence (list of dict): List of dicts of tokens.
+                Tokens should look like:
+                {"voice": ..., "tense": ..., other properties...}
+
+        """
+
+        for token in range(len(sentence)):
+            sentence = self.applyRulesTo(self.data, sentence, token)
+
+        return sentence
+
 
 class Contextual19FileParser(Contextual19Parser):
     """This class will parse data from file to use.
@@ -144,16 +330,16 @@ class Contextual19FileParser(Contextual19Parser):
             except TypeError:
                 return selector
 
-        def collectAssignings(lines):
-            """Collects all the assignings, write them to dict and return it.
+        def collectAssignments(lines):
+            """Collects all the assignments, write them to dict and return it.
             """
-            assignings = dict()
+            assignments = dict()
             try:
                 while True:
                     name, value = catchAssignment(lines)
-                    assignings[name] = value
+                    assignments[name] = value
             except (TypeError, IndexError):
-                return assignings
+                return assignments
 
         def collectSelectors(lines):
             """Collects all the selectors for rule, write them to dict and
@@ -181,7 +367,7 @@ class Contextual19FileParser(Contextual19Parser):
                     moveTo(lines, "if")
                     rule["if"] = collectSelectors(lines)
                     moveTo(lines, "then")
-                    rule["then"] = collectAssignings(lines)
+                    rule["then"] = collectAssignments(lines)
                     rules.append(rule)
             except (TypeError, IndexError):
                 return rules
