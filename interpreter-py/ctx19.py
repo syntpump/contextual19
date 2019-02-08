@@ -141,12 +141,15 @@ class Contextual19Parser:
             """Collects all the selectors for rule, write them to dict and
             return it
             """
-            conditions = dict()
+            conditions = list()
             try:
                 while True:
+                    selector = dict()
                     position, name = catchSelector(lines)
-                    conditions[name] = collectComparisons(lines)
-                    conditions[name]["position"] = position
+                    selector["position"] = position
+                    selector["name"] = name
+                    selector.update(collectComparisons(lines))
+                    conditions.append(selector)
             except TypeError:
                 return conditions
 
@@ -162,6 +165,9 @@ class Contextual19Parser:
                     moveTo(lines, "then")
                     rule["then"] = collectAssignings(lines)
                     rules.append(rule)
+                    print(lines)
+                    print(self.cursor)
+                    print(lines[self.cursor])
             except (TypeError, IndexError):
                 return rules
 
