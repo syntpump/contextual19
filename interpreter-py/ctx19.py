@@ -3,15 +3,15 @@ class Contextual19Parser:
     and can process your data using them.
     """
 
-    def _init__(self, data: dict):
+    def __init__(self, data=None):
         """Init the class and remember the rules.
 
         Args:
-            data (dict): Rules in object representation.
+            data (list): Rules in object representation.
 
         """
 
-        self.data = data
+        self.data = data if data else list()
 
     def applyRule(self, rule: dict, token: dict) -> dict:
         """Apply assignments from "then" block of rule to the token.
@@ -71,13 +71,13 @@ class Contextual19Parser:
                 end, beginning -> 0
             """
 
-            if selector["name"] in ["end", "beginning", "token"]:
+            if selector["__name"] in ["end", "beginning", "token"]:
                 return 0
 
-            if selector["name"] == "previous":
-                return -selector["position"]
+            if selector["__name"] == "previous":
+                return -selector["__position"]
             else:
-                return selector["position"]
+                return selector["__position"]
 
         def getAbsolutePosition(selector, token: int, sentence):
             """Returns number of absolute position of token to which the given
@@ -89,9 +89,9 @@ class Contextual19Parser:
                 selector = second next, token = 2 -> 4
             """
 
-            if selector["name"] == "beginning":
+            if selector["__name"] == "beginning":
                 return 0
-            elif selector["name"] == "end":
+            elif selector["__name"] == "end":
                 return len(sentence) - 1
             else:
                 position = token + getRelativePosition(selector)
@@ -108,7 +108,7 @@ class Contextual19Parser:
 
             for key in selector:
                 # Skip the service properties
-                if key in ["name", "position"]:
+                if key in ["__name", "__position"]:
                     continue
                 # If at least one key of token is not present the the whole
                 # rule is not appliable
@@ -199,6 +199,52 @@ class Contextual19Parser:
 
         return sentence
 
+    def save(self, filepath: str):
+        """This will convert self.data to Ctx19 syntax and write it to file.
+
+        Args:
+            filepath (str): Path to file to save data in.
+
+        Raises:
+            FileNotFoundError: The file does not exist.
+            PermissionError: You're not allowed to access to this file. This
+                error also can occur when the path you specified is directory,
+                not a file.
+
+        """
+
+        f = open(filepath, mode="w")
+
+        for rule in self.data:
+
+            f.write("if\n")
+
+            for selector in rule["if"]:
+
+                if selector["__name"] in ["end", "beginning", "token"]:
+                    f.write(
+                        "\t" + selector['__name'] + "\n"
+                    )
+                else:
+                    f.write(
+                        f"\t{selector['__position']}th {selector['__name']}\n"
+                    )
+
+                for key in selector:
+                    if key in ["__name", "__position"]:
+                        continue
+                    operator = "is" if selector[key][0] else "is not"
+                    f.write(
+                        f"\t\t{key} {operator} {selector[key][1]}\n"
+                    )
+
+            f.write("then\n")
+
+            for operator in rule["then"]:
+                f.write(
+                    f"\t{operator} becomes {rule['then'][operator]}\n"
+                )
+
 
 class Contextual19FileParser(Contextual19Parser):
     """This class will parse data from file to use.
@@ -241,7 +287,7 @@ class Contextual19FileParser(Contextual19Parser):
                 return lines[self.cursor][number:]
 
         def moveTo(lines, text):
-            """Moves reading self.cursor to next (or first) text
+            """Moves reading self.cursor to next (or first) text.
             """
             # global self.cursor
 
@@ -350,8 +396,8 @@ class Contextual19FileParser(Contextual19Parser):
                 while True:
                     selector = dict()
                     position, name = catchSelector(lines)
-                    selector["position"] = position
-                    selector["name"] = name
+                    selector["__position"] = position
+                    selector["__name"] = name
                     selector.update(collectComparisons(lines))
                     conditions.append(selector)
             except TypeError:
