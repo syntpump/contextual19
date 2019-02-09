@@ -3,7 +3,7 @@ class Contextual19Parser:
     and can process your data using them.
     """
 
-    def _init__(self, data=None):
+    def __init__(self, data=None):
         """Init the class and remember the rules.
 
         Args:
@@ -102,7 +102,7 @@ class Contextual19Parser:
                     return position
 
         def checkComparisons(position, selector, sentence):
-            """Check if some token (given as '__position') meets the selector
+            """Check if some token (given as 'position') meets the selector
             requirements.
             """
 
@@ -287,7 +287,7 @@ class Contextual19FileParser(Contextual19Parser):
                 return lines[self.cursor][number:]
 
         def moveTo(lines, text):
-            """Moves reading self.cursor to next (or first) text
+            """Moves reading self.cursor to next (or first) text.
             """
             # global self.cursor
 

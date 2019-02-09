@@ -102,13 +102,14 @@ This standard can be easily parsed to JSON format. Here's the example with comme
 ```json
 [
   {
-    "if": {
-      "next": {
-        "position": 1,
+    "if": [
+      {
+        "__name": "next",
+        "__position": 1,
         "name": [true, "value"],
         "name": [false, "value"]
       }
-    },
+    ],
     "then": {
       "name": "value"
     }
@@ -117,8 +118,8 @@ This standard can be easily parsed to JSON format. Here's the example with comme
 ```
 1. Rules must be enclosed into array, even though there's only one rule.
 2. Every rule should contain `if` and `then` properties.
-3. Only *name* of selector should be written in properties of `if` dictionary.
-4. Position of token should be written in `position` property, inside of selector dictionary. E.g.: for `second previous` selector becomes `previous` and `position` will be `2`.
+3. Selectors and their comparisons must be stored in one dictionary.
+4. Position of token should be written in `__position` property, inside of selector dictionary. E.g.: for `second previous` `__name` becomes `previous` and `__position` will be `2`.
 5. Statement `name is value` should be encoded like `[true, "value"]` and `name is not value` becomes `[false, "value"]`.
 
 
@@ -134,3 +135,6 @@ Contextual19 can be converted to YAML as well. It'll have the same structure as 
 toyaml --fiel rules.ctx19 --output rules.yml
 ```
 Here parameters is the same as in paragraph above.
+
+## Interpreters
+* [Go to Python interpreter](interpreter-py)
