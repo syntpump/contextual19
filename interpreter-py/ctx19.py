@@ -71,13 +71,13 @@ class Contextual19Parser:
                 end, beginning -> 0
             """
 
-            if selector["name"] in ["end", "beginning", "token"]:
+            if selector["__name"] in ["end", "beginning", "token"]:
                 return 0
 
-            if selector["name"] == "previous":
-                return -selector["position"]
+            if selector["__name"] == "previous":
+                return -selector["__position"]
             else:
-                return selector["position"]
+                return selector["__position"]
 
         def getAbsolutePosition(selector, token: int, sentence):
             """Returns number of absolute position of token to which the given
@@ -89,9 +89,9 @@ class Contextual19Parser:
                 selector = second next, token = 2 -> 4
             """
 
-            if selector["name"] == "beginning":
+            if selector["__name"] == "beginning":
                 return 0
-            elif selector["name"] == "end":
+            elif selector["__name"] == "end":
                 return len(sentence) - 1
             else:
                 position = token + getRelativePosition(selector)
@@ -102,13 +102,13 @@ class Contextual19Parser:
                     return position
 
         def checkComparisons(position, selector, sentence):
-            """Check if some token (given as 'position') meets the selector
+            """Check if some token (given as '__position') meets the selector
             requirements.
             """
 
             for key in selector:
                 # Skip the service properties
-                if key in ["name", "position"]:
+                if key in ["__name", "__position"]:
                     continue
                 # If at least one key of token is not present the the whole
                 # rule is not appliable
@@ -221,17 +221,17 @@ class Contextual19Parser:
 
             for selector in rule["if"]:
 
-                if selector["name"] in ["end", "beginning", "token"]:
+                if selector["__name"] in ["end", "beginning", "token"]:
                     f.write(
-                        "\t" + selector['name'] + "\n"
+                        "\t" + selector['__name'] + "\n"
                     )
                 else:
                     f.write(
-                        f"\t{selector['position']}th {selector['name']}\n"
+                        f"\t{selector['__position']}th {selector['__name']}\n"
                     )
 
                 for key in selector:
-                    if key in ["name", "position"]:
+                    if key in ["__name", "__position"]:
                         continue
                     operator = "is" if selector[key][0] else "is not"
                     f.write(
@@ -396,8 +396,8 @@ class Contextual19FileParser(Contextual19Parser):
                 while True:
                     selector = dict()
                     position, name = catchSelector(lines)
-                    selector["position"] = position
-                    selector["name"] = name
+                    selector["__position"] = position
+                    selector["__name"] = name
                     selector.update(collectComparisons(lines))
                     conditions.append(selector)
             except TypeError:
