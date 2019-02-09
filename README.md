@@ -123,14 +123,14 @@ This standard can be easily parsed to JSON format. Here's the example with comme
 5. Statement `name is value` should be encoded like `[true, "value"]` and `name is not value` becomes `[false, "value"]`.
 
 
-You can also use a `tojson.c` program in the `converters` in this repo ( [link](https://github.com/syntpump/contextual19/blob/master/converters/tojson.c) | [raw](https://raw.githubusercontent.com/syntpump/contextual19/master/tojson.c) ). Just compile it with GCC compiler and run with the following parameters:
+You can also use a `tojson.c` program in the `converters` in this repo ([go there](converters/tojson.c)). Just compile it with GCC compiler and run with the following parameters:
 ```
 tojson --file rules.ctx19 --output rules.json
 ```
 Here `file` is a path to your `.ctx19` file and `output` is the path to file to parse in. If it's not exist, it'll be created.
 
 ### Convert to YAML
-Contextual19 can be converted to YAML as well. It'll have the same structure as the JSON document. To perform it automatically, compile `toyaml.c` ( [link](https://github.com/syntpump/contextual19/blob/master/toyaml.c) | [raw](https://raw.githubusercontent.com/syntpump/contextual19/master/converters/toyaml.c) ) with GCC compiler and run with the following parameters:
+Contextual19 can be converted to YAML as well. It'll have the same structure as the JSON document. To perform it automatically, compile `toyaml.c` ([go there](converters/toyaml.c)) with GCC compiler and run with the following parameters:
 ```
 toyaml --fiel rules.ctx19 --output rules.yml
 ```
