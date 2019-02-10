@@ -97,8 +97,8 @@ You can also test it on [regex101](https://regex101.com/r/K54WEL/1/).
 
 ## Converting to another markups
 
-### Convert to JSON
-This standard can be easily parsed to JSON format. Here's the example with comments.
+### Convert to JSON (object representation)
+This standard can be easily represented in object notation. Here's the example using JSON with comments.
 ```json
 [
   {
@@ -132,7 +132,7 @@ Here `file` is a path to your `.ctx19` file and `output` is the path to file to 
 ### Convert to YAML
 Contextual19 can be converted to YAML as well. It'll have the same structure as the JSON document. To perform it automatically, compile `toyaml.c` ([go there](converters/toyaml.c)) with GCC compiler and run with the following parameters:
 ```
-toyaml --fiel rules.ctx19 --output rules.yml
+toyaml --file rules.ctx19 --output rules.yml
 ```
 Here parameters is the same as in paragraph above.
 
