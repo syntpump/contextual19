@@ -1,0 +1,6 @@
+# Ignore for Python packages
+interpreter-py/*.egg-info/
+interpreter-py/*.whl
+interpreter-py/dist/
+interpreter-py/__pycache__/
+interpreter-py/build/*
