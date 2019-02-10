@@ -1,6 +1,8 @@
+[Read here about Contextual19](https://github.com/syntpump/contextual19/)
+
 # Contextual19 Python Interpreter
 
-Files in this directories provides 4 classes which you can use to work with Ctx19
+This module provides you 2 classes to work with Ctx19.
 
 ## `ctx19.Contextual19Parser`
 
@@ -47,6 +49,9 @@ Data you passed will be stored in `parser.data`.
 * `save(filepath: str) -> void`  
 	This method will simply save the rules stored in `self.data` into file you passed as `filepath`.
 
+* `applyToSentence(rule: dict, sentence: list) -> list`
+	This method will apply the given rule to every token in the sentence if possible.
+
 ### Private methods
 
 There's also some methods that should not be used in your code, but they are widely used in `Contextual19Parser.apply` method and they can be useful in some cases.
@@ -80,33 +85,11 @@ Since this is the `Contextual19Parser` children, it'll inherit all the parent me
 * `parseFile(void) -> void`  
 	This will parse Contextual19 syntax from the file saved in `self.file`. You can change the file and call this method again.
 
-## `ctx19json.Contextual19JSONFileParser`
+## Reading other object notation formats
 
-This is the cildren of `ctx19.Contextual19FileParser` but with the changed `parseFile` private methods, so it can read `.json` file which contains rules in object representation.
-
-### Initialization
-
-To initialize this parser just pass path to `.json` file:
-
+From 1.2 version JSON and YAML parsers was moved in order to make ctx19 independent from other packages, but you can still do it yourself. Here's the example:
 ```python
-from ctx19json import Contextual19JSONFileParser
-parser = Contextual19JSONFileParser("path/to/file.json")
+import json
+from ctx19 import Contextual19Parser
+ctx = Contextual19Parser(json.load("path/to/file.json"))
 ```
-
-**Please note,** that this class will require `json` module to be installed.
-
-## `ctx19json.Contextual19YAMLFileParser`
-
-This is the cildren of `ctx19.Contextual19FileParser` and it works just like JSON-reader, but with YAML.
-
-### Initialization
-
-To initialize this parser just pass path to `.yaml`/`.yml` file:
-
-```python
-from ctx19json import Contextual19YAMLFileParser
-parser = Contextual19YAMLFileParser("path/to/file.yaml")
-```
-
-**Please note,** that this class will require `yaml` module to be installed.
-

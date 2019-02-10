@@ -184,6 +184,22 @@ class Contextual19Parser:
 
         return sentence
 
+    def applyToSentence(self, rule: dict, sentence: list) -> list:
+        """This will apply the rule to every token in sentence if possible.
+
+        Args:
+            rule (dict): Simple rule in object representation which contains
+                'if' and 'then' properties
+            sentence (list of dict): List of dicts of tokens.
+                Tokens should look like:
+                {"voice": ..., "tense": ..., other properties...}
+        """
+
+        for token in range(len(sentence)):
+            sentence = self.applyIfPossible(rule, sentence, token)
+
+        return sentence
+
     def apply(self, sentence: list) -> list:
         """Apply rules to tokens of the sentence.
 
