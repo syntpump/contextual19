@@ -1,8 +1,9 @@
-[Read here about Contextual19](https://github.com/syntpump/contextual19/)
+[![Pypi](https://img.shields.io/pypi/v/ctx19.svg)](https://pypi.python.org/pypi/ctx19)
 
 # Contextual19 Python Interpreter
 
-This module provides you 2 classes to work with Ctx19.
+This module provides you 2 classes to work with Ctx19.  
+You can [read here about Contextual19](https://github.com/syntpump/contextual19/).
 
 ## `ctx19.parsers.Contextual19Parser`
 
