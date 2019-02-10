@@ -341,8 +341,8 @@ int main (int argc, char** argv) {
 		}
 
 		if(feof(inpfile)){
-            deleteComma;
-            break;
+			deleteComma;
+			break;
 		}
 
 	}
