@@ -21,40 +21,49 @@
 	!strcmp(buffer, n == 1 ? "\t" : "\t\t")
 
 #define catchBlock(name) \
-	!strcmp( \
-		buffer, \
-		name \
-		"\n" \
-	)
+	!strcmp(buffer, name "\n")
 
 
-// Write YAML-style property: \t...\t"prop": value; without quotes
-#define printProperty(indent, name, value) \
+// Prints this message: {indent}"{name}": {quote}{value}{quote}
+#define printProperty(indent, name, quote, value) \
 	fprintf( \
 		outpfile, \
-		"%s%s: %s\n", \
-		indent, \
-		name, \
-		value \
+		"%s%s: %s%s%s\n", \
+		indent, name, quote, value, quote \
 	);
 
 
-// Write dict YAML-style property: \t...\t"prop": {
-#define printDict(indent, name) \
-	fprintf( \
-		outpfile, \
-		"%s%s:\n", \
-		indent, \
-		name \
-	);
+// Prints this message: {indent}"{name}": {bracket}\n
+#define printNamedBlock(indent, name, bracket) \
+    fprintf(outpfile, "%s%s: %s\n", indent, name, bracket);
 
+
+// Prints this message: {indent}{bracket}\n
+#define printBlock(indent, bracket) \
+    fprintf(outpfile, "%s%s\n", indent, bracket);
+
+
+// Close block with bracket you given
+#define closeBlock(indent, bracket) \
+    fprintf(outpfile, "%s%s,\n", indent, bracket);
+
+
+#define deleteComma \
+    fseek(outpfile, -3, SEEK_CUR); \
+	fprintf(outpfile, "\n");
 
 // Write array item '-' with indent
 #define arrayItem(indent) \
-	fprintf( \
-		outpfile, \
-		"%s-\n", \
-		indent \
+	fprintf(outpfile, "%s-\n", indent);
+
+
+#define grabProperty \
+	char propertyName[MAXPROPSIZE]; \
+	char propertyValue[MAXVALSIZE]; \
+	getProperty( \
+		buffer, \
+		propertyName, \
+		propertyValue \
 	);
 
 
@@ -70,9 +79,9 @@ short readUntil (char what, FILE *fp, char *buffer) {
 	*  its length.*/
 	char c;
 	short len = 0;
-	while ((c = fgetc(fp)) != EOF && c != what)
+	while ((c = fgetc(fp)) != EOF && c != what) {
 		buffer[len++] = c;
-
+	}
 	if (feof(fp)) {
 		fprintf(stderr, "Unexpected end of the file.\n");
 		exit(EXIT_FAILURE);
@@ -94,7 +103,7 @@ void getSelector (char *buffer, char *position) {
 	*  "second previous": buffer -> "previous", position -> "2"
 	*  "6th next": buffer -> "next", position -> "6"
 	*  Write selector name to buffer, position to *position.
-	* 
+	*
 	*  Args:
 	*      buffer: String to read.
 	*      position: Char array to write position of selector.
@@ -107,7 +116,6 @@ void getSelector (char *buffer, char *position) {
 		// Copy all until 't'
 		while (buffer[c++ + 1] != 't')
 			position[c] = buffer[c];
-
 		position[c] = '\0';
 		// Selector name will start after 3 symbols: 'th '
 		c += 2;
@@ -203,13 +211,12 @@ void getProperty (char *buffer, char *name, char *value) {
 		// [true, value]	if "name is value"
 		// [false, value]	if "name is not value"
 		unsigned char isTrue;
-
 		if (buffer[c+6] == 't' && buffer[c+7] == ' ')
 			// After 'is no-t -'
 			// isTrue becomes false
 			isTrue = !(c += 8);
 		else
-			// isTrue becomes true
+            // isTrue becomes true
 			isTrue = !!(c += 4);
 
 		strcpy(value, isTrue ? "[true, " : "[false, ");
@@ -229,7 +236,7 @@ int main (int argc, char** argv) {
 
 	if (argc == 1) {
 		printf(
-"This parser can convert .ctx19 files to .yaml, but some parameters are "
+"This parser can convert .ctx19 files to .json, but some parameters are "
 "needed.\n\n"
 "Expected parameters:\n"
 "Name            Default     Description\n"
@@ -262,6 +269,8 @@ int main (int argc, char** argv) {
 
 	// Start of array of rules.
 
+	fprintf(outpfile, "---\n");
+
 	while (1) {
 
 		char buffer[BUFFERSIZE] = {' '};
@@ -271,13 +280,13 @@ int main (int argc, char** argv) {
 		// Catch 'if' block.
 		fgets(buffer, 4, inpfile);
 		if (catchBlock("if")) {
-			printDict("  ", "if");
+            printNamedBlock("  ", "if", "");
 
 			// Catch selector.
 			while(catchTabs(1)){
 
 				clear(buffer);
-				// Enough to contain two numbers and '\0'
+				// MAXSELPOS is enough to contain two numbers and '\0'
 				char selectorPosition[MAXSELPOS];
 				// Name of selector will be written into buffer.
 				readUntil('\n', inpfile, buffer);
@@ -285,28 +294,21 @@ int main (int argc, char** argv) {
 					buffer,
 					selectorPosition
 				);
-				printDict("    ", buffer);
-				printProperty("        ", "position", selectorPosition);
-				fseeko(outpfile, -1, SEEK_CUR);
+				printBlock("    ", "-");
+				printProperty("        ", "__position", "", selectorPosition);
+				printProperty("        ", "__name", "\"", buffer);
 				clear(buffer);
 
 				// Catch property
 				while(catchTabs(2)){
 					clear(buffer);
 					readUntil('\n', inpfile, buffer);
-					char propertyName[MAXPROPSIZE];
-					char propertyValue[MAXVALSIZE];
-					getProperty(
-						buffer,
-						propertyName,
-						propertyValue
-					);
-					printProperty("        ", propertyName, propertyValue);
+					grabProperty;
+					printProperty("        ", propertyName, "", propertyValue);
 					clear(buffer);
 				}
 				fseek(inpfile, -2, SEEK_CUR);
 
-				// End of selector
 			}
 
 			// End of 'if' block.
@@ -316,35 +318,26 @@ int main (int argc, char** argv) {
 			// Catch 'then' block
 			fgets(buffer, 12, inpfile);
 			if (catchBlock("then")){
-
-				printDict("  ", "then");
+				printNamedBlock("  ", "then", "");
 				clear(buffer);
 
 				// Caught property
 				while(catchTabs(1)){
 					clear(buffer);
 					readUntil('\n', inpfile, buffer);
-					char propertyName[MAXPROPSIZE];
-					char propertyValue[MAXVALSIZE];
-					getProperty(
-						buffer,
-						propertyName,
-						propertyValue
-					);
-					printProperty("      ", propertyName, buffer);
+					grabProperty;
+					printProperty("      ", propertyName, "\"", buffer);
 					clear(buffer);
-
 				}
-
 				// End of 'then' block.
+
 			}
-
 			// End of rule block
+
 		}
 
-		if(feof(inpfile)){
+		if(feof(inpfile))
 			break;
-		}
 
 	}
 
