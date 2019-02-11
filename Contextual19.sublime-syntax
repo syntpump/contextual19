@@ -11,7 +11,7 @@ contexts:
       push: line_comment
 
     # Properties
-    - match: '\b(pos|case|voice|gender|degree|person|tense|animate|number|type|form|aspect)\b'
+    - match: '\w+(?=\s(?:is|becomes))'
       scope: entity.name
 
     # Conditional
