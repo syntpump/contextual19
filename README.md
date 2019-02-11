@@ -73,8 +73,7 @@ Your code can be recognized with the following regex:
 		)\b
 	)
 	(?<comparison> (is ( \s not )? ) )
-	(?<property_name> (pos|case|voice|gender|degree|person|tense|animate|
-					number|type|form|aspect) )
+	(?<property_name> \w+(?=\s(?:is|becomes)) )
 	(?<property_value> (\w+) )
 	(?<property> ( (?&property_name) \s (?&comparison) \s (?&property_value) ) )
 	(?<assign> (becomes) )
