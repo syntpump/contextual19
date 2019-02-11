@@ -1,7 +1,7 @@
 import setuptools
 
-with open("README.md", encoding="utf-8") as file:
-    long_description = file.read()
+with open("README.md", encoding="utf-8") as fp:
+    long_description = fp.read()
 
 setuptools.setup(
     name="ctx19",
