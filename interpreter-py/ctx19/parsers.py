@@ -75,9 +75,9 @@ class Contextual19Parser:
                 return 0
 
             if selector["__name"] == "previous":
-                return -selector["__position"]
+                return int(-selector["__position"])
             else:
-                return selector["__position"]
+                return int(selector["__position"])
 
         def getAbsolutePosition(selector, token: int, sentence):
             """Returns number of absolute position of token to which the given
