@@ -266,21 +266,15 @@ class Contextual19FileParser(Contextual19Parser):
     """This class will parse data from file to use.
     """
 
-    def __init__(self, filepath: str):
+    def __init__(self, fp):
         """Init the class and read the file.
 
         Args:
-            filepath (str): Path to .ctx19 file to read.
-
-        Raises:
-            FileNotFoundError: The file does not exist.
-            PermissionError: You're not allowed to access to this file. This
-                error also can occur when the path you specified is directory,
-                not a file.
+            fp (file): File object open()
 
         """
 
-        self.file = open(filepath, mode="r", encoding="utf-8")
+        self.file = fp
 
         self.parseFile()
 

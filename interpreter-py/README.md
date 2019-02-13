@@ -72,11 +72,11 @@ This is the children of `Contextual19Parser` class with the changed initializati
 
 ### Initialization
 
-To initialize this parser just pass path to file with rules as the `filepath` parameter:
+To initialize this parser just pass path to file with rules as the `fp` parameter:
 
 ```python
 from ctx19.parsers import Contextual19FileParser
-parser = Contextual19FileParser("path/to/file.ctx19")
+parser = Contextual19FileParser(open("path/to/file.ctx19"))
 ```
 
 Since this is the `Contextual19Parser` children, it'll inherit all the parent methods, but one new private was added.
