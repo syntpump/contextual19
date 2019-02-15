@@ -215,34 +215,26 @@ class Contextual19Parser:
 
         return sentence
 
-    def save(self, filepath: str):
+    def save(self, fp):
         """This will convert self.data to Ctx19 syntax and write it to file.
 
         Args:
-            filepath (str): Path to file to save data in.
-
-        Raises:
-            FileNotFoundError: The file does not exist.
-            PermissionError: You're not allowed to access to this file. This
-                error also can occur when the path you specified is directory,
-                not a file.
+            fp (file): File to save data in.
 
         """
 
-        f = open(filepath, mode="w")
-
         for rule in self.data:
 
-            f.write("if\n")
+            fp.write("if\n")
 
             for selector in rule["if"]:
 
                 if selector["__name"] in ["end", "beginning", "token"]:
-                    f.write(
+                    fp.write(
                         "\t" + selector['__name'] + "\n"
                     )
                 else:
-                    f.write(
+                    fp.write(
                         f"\t{selector['__position']}th {selector['__name']}\n"
                     )
 
@@ -250,14 +242,14 @@ class Contextual19Parser:
                     if key in ["__name", "__position"]:
                         continue
                     operator = "is" if selector[key][0] else "is not"
-                    f.write(
+                    fp.write(
                         f"\t\t{key} {operator} {selector[key][1]}\n"
                     )
 
-            f.write("then\n")
+            fp.write("then\n")
 
             for operator in rule["then"]:
-                f.write(
+                fp.write(
                     f"\t{operator} becomes {rule['then'][operator]}\n"
                 )
 
