@@ -258,17 +258,23 @@ class Contextual19FileParser(Contextual19Parser):
     """This class will parse data from file to use.
     """
 
-    def __init__(self, fp):
+    def __init__(self, f, astext=False):
         """Init the class and read the file.
 
         Args:
-            fp (file): File object open()
+            f (file): File object open()
 
         """
 
-        self.file = fp
+        if astext:
+            self.file = open(f, mode="r", encoding="utf-8")
+            self.lines = [line.rstrip("\n") for line in self.file]
+        else:
+            self.lines = f.split("\n")
 
         self.parseFile()
+
+        del self.lines
 
     def parseFile(self):
         """Read self.file and convert it to object. It will be the same as the
@@ -423,11 +429,8 @@ class Contextual19FileParser(Contextual19Parser):
         # Remember reading cursor
         self.cursor = 0
 
-        lines = [line.rstrip('\n') for line in self.file]
-        self.cursor = 0
-
         # This will iterate reading to the end of file
-        self.data = collectRules(lines)
+        self.data = collectRules(self.lines)
 
         # Delete cursor as not needed long
         del self.cursor
