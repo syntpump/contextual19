@@ -35,21 +35,21 @@
 
 // Prints this message: {indent}"{name}": {bracket}\n
 #define printNamedBlock(indent, name, bracket) \
-    fprintf(outpfile, "%s\"%s\": %s\n", indent, name, bracket);
+	fprintf(outpfile, "%s\"%s\": %s\n", indent, name, bracket);
 
 
 // Prints this message: {indent}{bracket}\n
 #define printBlock(indent, bracket) \
-    fprintf(outpfile, "%s%s\n", indent, bracket);
+	fprintf(outpfile, "%s%s\n", indent, bracket);
 
 
 // Close block with bracket you given
 #define closeBlock(indent, bracket) \
-    fprintf(outpfile, "%s%s,\n", indent, bracket);
+	fprintf(outpfile, "%s%s,\n", indent, bracket);
 
 
 #define deleteComma \
-    fseek(outpfile, -3, SEEK_CUR); \
+	fseek(outpfile, -3, SEEK_CUR); \
 	fprintf(outpfile, "\n");
 
 
@@ -212,7 +212,7 @@ void getProperty (char *buffer, char *name, char *value) {
 			// isTrue becomes false
 			isTrue = !(c += 8);
 		else
-            // isTrue becomes true
+			// isTrue becomes true
 			isTrue = !!(c += 4);
 
 		strcpy(value, isTrue ? "[true, \"" : "[false, \"");
@@ -274,7 +274,7 @@ int main (int argc, char** argv) {
 		// Catch 'if' block.
 		fgets(buffer, 4, inpfile);
 		if (catchBlock("if")) {
-            printNamedBlock("\t\t", "if", "[");
+			printNamedBlock("\t\t", "if", "[");
 
 			// Catch selector.
 			while(catchTabs(1)){

@@ -75,9 +75,9 @@ class Contextual19Parser:
                 return 0
 
             if selector["__name"] == "previous":
-                return -selector["__position"]
+                return int(-selector["__position"])
             else:
-                return selector["__position"]
+                return int(selector["__position"])
 
         def getAbsolutePosition(selector, token: int, sentence):
             """Returns number of absolute position of token to which the given
@@ -215,34 +215,26 @@ class Contextual19Parser:
 
         return sentence
 
-    def save(self, filepath: str):
+    def save(self, fp):
         """This will convert self.data to Ctx19 syntax and write it to file.
 
         Args:
-            filepath (str): Path to file to save data in.
-
-        Raises:
-            FileNotFoundError: The file does not exist.
-            PermissionError: You're not allowed to access to this file. This
-                error also can occur when the path you specified is directory,
-                not a file.
+            fp (file): File to save data in.
 
         """
 
-        f = open(filepath, mode="w")
-
         for rule in self.data:
 
-            f.write("if\n")
+            fp.write("if\n")
 
             for selector in rule["if"]:
 
                 if selector["__name"] in ["end", "beginning", "token"]:
-                    f.write(
+                    fp.write(
                         "\t" + selector['__name'] + "\n"
                     )
                 else:
-                    f.write(
+                    fp.write(
                         f"\t{selector['__position']}th {selector['__name']}\n"
                     )
 
@@ -250,14 +242,14 @@ class Contextual19Parser:
                     if key in ["__name", "__position"]:
                         continue
                     operator = "is" if selector[key][0] else "is not"
-                    f.write(
+                    fp.write(
                         f"\t\t{key} {operator} {selector[key][1]}\n"
                     )
 
-            f.write("then\n")
+            fp.write("then\n")
 
             for operator in rule["then"]:
-                f.write(
+                fp.write(
                     f"\t{operator} becomes {rule['then'][operator]}\n"
                 )
 
@@ -266,23 +258,23 @@ class Contextual19FileParser(Contextual19Parser):
     """This class will parse data from file to use.
     """
 
-    def __init__(self, filepath: str):
+    def __init__(self, f, astext=False):
         """Init the class and read the file.
 
         Args:
-            filepath (str): Path to .ctx19 file to read.
-
-        Raises:
-            FileNotFoundError: The file does not exist.
-            PermissionError: You're not allowed to access to this file. This
-                error also can occur when the path you specified is directory,
-                not a file.
+            f (file): File object open()
 
         """
 
-        self.file = open(filepath, mode="r", encoding="utf-8")
+        if astext:
+            self.file = open(f, mode="r", encoding="utf-8")
+            self.lines = [line.rstrip("\n") for line in self.file]
+        else:
+            self.lines = f.split("\n")
 
         self.parseFile()
+
+        del self.lines
 
     def parseFile(self):
         """Read self.file and convert it to object. It will be the same as the
@@ -437,11 +429,8 @@ class Contextual19FileParser(Contextual19Parser):
         # Remember reading cursor
         self.cursor = 0
 
-        lines = [line.rstrip('\n') for line in self.file]
-        self.cursor = 0
-
         # This will iterate reading to the end of file
-        self.data = collectRules(lines)
+        self.data = collectRules(self.lines)
 
         # Delete cursor as not needed long
         del self.cursor
