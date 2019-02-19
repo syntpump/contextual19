@@ -5,7 +5,7 @@ with open("README.md", encoding="utf-8") as fp:
 
 setuptools.setup(
     name="ctx19",
-    version="1.2",
+    version="1.3",
     description="A Python driver for Contextual19 markup language",
     long_description=long_description,
     long_description_content_type="text/markdown",
