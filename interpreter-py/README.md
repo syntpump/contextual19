@@ -27,7 +27,18 @@ parser = Contextual19Parser(data)
 
 Data you passed will be stored in `parser.data`.
 
-### methods
+### Keywords
+* `bool` `saveContext` (default is `True`)  
+	This parameter set transformation resistance of the rules. Suppose, we have this sentence:  
+	`[{a:0}, {a:1}, {a:2}]`,  
+	and this rules (inline-written):  
+	#1: `if previous a is 0   then a becomes 2`,    
+	#2: `if previous a is 1   then a becomes 3`.  
+	After executing rule #1 sentence becomes:  
+	`[{a:0}, {a:2}, {a:2}]`  
+	Now the rule #2 is not appliable in this contexts. That is what means "transformation nonresistance". To make the rule #2 work, `saveContext` must be set to `True` and Ctx19 module will remember original sentence before applying rules (via `deepcopy`, so some additional memory will be needed).
+
+### Methods
 
 * `apply(sentence: list) -> list`  
 	This method apply rules, stored in `self.data` to the sentence you passed.  
@@ -46,25 +57,16 @@ Data you passed will be stored in `parser.data`.
 		}
 	]
 	```
-	If some property will be missing while rule applying then it will be skipped.
+	Missing properties will be skipped.
 * `save(filepath: str) -> void`  
 	This method will simply save the rules stored in `self.data` into file you passed as `filepath`.
-
-* `applyToSentence(rule: dict, sentence: list) -> list`  
-	This method will apply the given rule to every token in the sentence if possible.
 
 ### Private methods
 
 There's also some methods that should not be used in your code, but they are widely used in `Contextual19Parser.apply` method and they can be useful in some cases.
 
-* `applyRule(rule: dict, token: dict) -> dict`  
-	Apply assignments from some rule to the given token. This won't check if the given rule is really appliable to the token in this context. Resulting token will be returned.
 * `ruleIsAppliable(rule: dict, sentence: list, token: int) -> bool`  
 	Check if the given `rule` is appliable to the `token`th token in the `sentence`. It'll check the context.
-* `applyIfPossible(rule: dict, sentence: list, token: int) -> list`  
-	It will apply some rule to the token if it's appliable in this context. Resulting sentence will be returned.
-* `applyRulesTo(rules: list, sentence: list, token: int) -> list`  
-	Apply each rule in the given list to the `token`-th token in the `sentence` if they're appliable.
 
 ## `ctx19.parsers.Contextual19FileParser`
 
@@ -79,7 +81,7 @@ from ctx19.parsers import Contextual19FileParser
 parser = Contextual19FileParser(open("path/to/file.ctx19"))
 ```
 
-### Additional parameters
+### Keywords
 * `bool` `astext`  
 	Set this to `True` to read text from `f` parameter instead of dealing with it as file.
 	**Example of use:**
