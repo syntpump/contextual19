@@ -1,47 +1,24 @@
+from copy import deepcopy
+
+
 class Contextual19Parser:
     """This is Contextual19 parser. It takes the rules in object representation
     and can process your data using them.
     """
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, saveContext=True):
         """Init the class and remember the rules.
 
         Args:
             data (list): Rules in object representation.
+            saveContext (list): If set to True, then rules will become
+                transformation-resistance. The appliable of rules will be found
+                out on old unchanged context.
 
         """
 
         self.data = data if data else list()
-
-    def applyRule(self, rule: dict, token: dict) -> dict:
-        """Apply assignments from "then" block of rule to the token.
-
-        Args:
-            rule (dict): Rule dict from self.data which contains 'if' and
-                'then' properties.
-            token (dict): Token dictionary which properties will be changed.
-                Example:
-                token = {
-                    "a": 0, "b": 1
-                }
-                Under this rules:
-                    a becomes 1
-                    b becomes 2
-                `token` becomes: {
-                    "a": 1,
-                    "b": 2
-                }
-
-        Returns:
-            dict: Resulting token.
-
-        """
-
-        for key in rule["then"]:
-            if key in token:
-                token[key] = rule["then"][key]
-
-        return token
+        self.saveContext = saveContext
 
     def ruleIsAppliable(self, rule: dict, sentence: list, token: int) -> bool:
         """Check if rule as appliable to some token in the sentence.
@@ -142,76 +119,32 @@ class Contextual19Parser:
         # If there was no fails before, this code will execute
         return True
 
-    def applyIfPossible(self, rule: dict, sentence: list, token: int) -> list:
-        """Check if rule is appliable to the specific token and apply it then.
+    def apply(self, sentence: list) -> list:
+        """Apply rules to the tokens of the sentence.
 
         Args:
-            rule (dict): Rule dict from self.data.
             sentence (list of dict): List of dicts of tokens.
                 Tokens should look like:
                 {"voice": ..., "tense": ..., other properties...}
-            token (int): Number of token to check.
-
-        Return:
-            list of dict: Resulting sentence
-
-        """
-
-        if self.ruleIsAppliable(rule, sentence, token):
-            sentence[token] = self.applyRule(rule, sentence[token])
-
-        return sentence
-
-    def applyRulesTo(self, rules: list, sentence: list, token: int) -> list:
-        """Check each rule if it is appliable to the given token and apply it
-        then.
-
-        Args:
-            rules (list of dicts): Rules from self.data with standard 'if' and
-                'then' properties.
-            sentence (list of dict): List of dicts of tokens.
-                Tokens should look like:
-                {"voice": ..., "tense": ..., other properties...}
-            token (int): Number of token to apply.
 
         Returns:
-            list of dict: Resulting sentence
+            list: Resulting sentence.
 
         """
 
-        for rule in rules:
-            sentence = self.applyIfPossible(rule, sentence, token)
+        if self.saveContext:
+            original = deepcopy(sentence)
 
-        return sentence
+        for tokenindex in range(len(sentence)):
 
-    def applyToSentence(self, rule: dict, sentence: list) -> list:
-        """This will apply the rule to every token in sentence if possible.
+            for rule in self.data:
 
-        Args:
-            rule (dict): Simple rule in object representation which contains
-                'if' and 'then' properties
-            sentence (list of dict): List of dicts of tokens.
-                Tokens should look like:
-                {"voice": ..., "tense": ..., other properties...}
-        """
-
-        for token in range(len(sentence)):
-            sentence = self.applyIfPossible(rule, sentence, token)
-
-        return sentence
-
-    def apply(self, sentence: list) -> list:
-        """Apply rules to tokens of the sentence.
-
-        Args:
-            sentence (list of dict): List of dicts of tokens.
-                Tokens should look like:
-                {"voice": ..., "tense": ..., other properties...}
-
-        """
-
-        for token in range(len(sentence)):
-            sentence = self.applyRulesTo(self.data, sentence, token)
+                if self.ruleIsAppliable(
+                    rule,
+                    sentence if not self.saveContext else original,
+                    tokenindex
+                ):
+                    sentence[tokenindex].update(rule["then"])
 
         return sentence
 
@@ -258,7 +191,7 @@ class Contextual19FileParser(Contextual19Parser):
     """This class will parse data from file to use.
     """
 
-    def __init__(self, f, astext=False):
+    def __init__(self, f, astext=False, saveContext=True):
         """Init the class and read the file.
 
         Args:
@@ -266,11 +199,13 @@ class Contextual19FileParser(Contextual19Parser):
 
         """
 
+        self.saveContext = saveContext
+
         if astext:
             self.file = open(f, mode="r", encoding="utf-8")
             self.lines = [line.rstrip("\n") for line in self.file]
         else:
-            self.lines = f.split("\n")
+            self.lines = f.read().split("\n")
 
         self.parseFile()
 
@@ -318,6 +253,7 @@ class Contextual19FileParser(Contextual19Parser):
             data = expectTabs(lines, 1).split(" ")
 
             position = 1
+
             # There's only one word as selector
             if len(data) == 1:
                 self.cursor += 1
@@ -325,12 +261,13 @@ class Contextual19FileParser(Contextual19Parser):
 
             name = data[1]
 
-            if data[0] in words:
+            position = (
                 # Look for literal position in dictionary
-                position = words[data[0]]
-            else:
+                words[data[0]]
+                if data[0] in words
                 # Cut out 'th' from the and
-                position = int(data[0][:-2])
+                else int(data[0][:-2])
+            )
 
             self.cursor += 1
             return (position, name)
@@ -377,9 +314,7 @@ class Contextual19FileParser(Contextual19Parser):
             # appearing
             try:
                 while True:
-                    name, value, isPositive = catchComparison(
-                        lines
-                    )
+                    name, value, isPositive = catchComparison(lines)
                     selector[name] = [isPositive, value]
             except TypeError:
                 return selector
@@ -402,10 +337,11 @@ class Contextual19FileParser(Contextual19Parser):
             conditions = list()
             try:
                 while True:
-                    selector = dict()
                     position, name = catchSelector(lines)
-                    selector["__position"] = position
-                    selector["__name"] = name
+                    selector = {
+                        "__position": position,
+                        "__name": name
+                    }
                     selector.update(collectComparisons(lines))
                     conditions.append(selector)
             except TypeError:
