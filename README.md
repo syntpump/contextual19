@@ -1,9 +1,9 @@
 # Contextual19 Markup Standard
 
-Contextual19 is a markup standard to save rules for transformation based tagging (the most simplest example described in this [NLTK book](http://www.nltk.org/book/ch05.html)). It's just a lighter way to save them and make human-readable.
+Contextual19 is a markup standard to save rules for transformation based tagging (the most simple example described in this [NLTK book](http://www.nltk.org/book/ch05.html)). It's just a lighter way to save them and make human-readable.
 
 ## Syntax
-Every rule consist of `if` and `then` part when you can specify conditions whether token's tagging must be changed.  
+Every rule consists of `if` and `then` part where you can specify conditions whether token's tagging must be changed.  
 Here's the syntax for rules:
 ```
 if
